@@ -228,7 +228,7 @@ Sau khi thực hiện lệnh `pop ebx` thì esp sẽ tăng lên 4 (0019FF6C + 4 
 
 - Các đoạn mã trên không trực tiếp cho thấy chương trình sử dụng `Resolve API`, nhưng nó thể hiện dấu hiệu của kỹ thuật ẩn `API`. Đây có thể là một dấu hiệu cho thấy chương trình này đang cố gắng thao tác với `API` một cách **gián tiếp**.
 
-# 2. Thao tác cấp thấp với các mô đun.
+## 2. Thao tác cấp thấp với các mô đun.
 
 - Đoạn mã trên không trực tiếp thể hiện rằng chương trình có sử dụng `Resolve API`, nhưng nó có dấu hiệu của việc thao tác cấp thấp với các mô đun đã tải. Điều này cho thấy một khả năng chương trình có thể đang thực hiện phân tích hoặc giám sát các mô đun `API`
 
