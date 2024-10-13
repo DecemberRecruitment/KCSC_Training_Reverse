@@ -59,7 +59,9 @@ Suggested IDE: https://www.masm32.com/
 
 - Lệnh `PUSH` dùng để lưu giá trị vào ngăn xếp.
 
-    - Đầu tiên, giá trị của `ESP` sẽ giảm đi `4` (trên hệ thống 32-bit), do ngăn xếp phát triển theo hướng ngược.
+    - Đầu tiên, giá trị của `ESP` sẽ giảm đi `4` (trên hệ thống 32-bit và `8` trên hệ thống bit), do ngăn xếp phát triển theo hướng ngược.
+
+        Do đây là hệ thống 32-bit (`4` btye), mà `ESP` sẽ lưu lại địa chỉ của con trỏ đỉnh stack, nên mỗi lần push lên thì địa chỉ đó sẽ giảm đi 4 byte (còn với hệ thống 64 sẽ là `8`)
 
     - Sau đó, **giá trị** cần lưu sẽ được ghi vào địa chỉ mà `ESP` đang trỏ đến.
 
@@ -205,4 +207,50 @@ Sau khi thực hiện lệnh `pop ebx` thì esp sẽ tăng lên 4 (0019FF6C + 4 
     mov esp, ebp
     pop ebp
     ```
+
+# DẤU HIỆU NHẬN BIẾT CHƯƠNG TRÌNH CÓ SỬ DỤNG WINAPI
+
+## 1. Tìm kiếm các Tên Hàm (chuỗi) Liên quan đến Resolve API.
+
+- IDA thường cho phép bạn tìm kiếm các tên hàm cụ thể trong mã giả. Hãy thử tìm các hàm hoặc chuỗi liên quan đến `resolve`, `Resolve API`, `resolveRequest`, hoặc tên các phương thức đặc thù của `Resolve API` (ví dụ trên của mình không gọi trực tiếp WinAPI nên sẽ theo dõi các string có trong các hàm).
+
+- Nếu chương trình có sử dụng `Resolve API`, các hàm gọi đến API thường có thể có tên gọi đặc thù hoặc chứa các từ khóa rõ ràng.
+
+- Ví dụ:
+
+    ![alt text](IMG/2/image.png)
+
+    ![alt text](IMG/2/image-1.png)
+
+    ![alt text](IMG/2/image-2.png)
+
+    ![alt text](IMG/2/image-3.png)
+
+- Các đoạn mã trên không trực tiếp cho thấy chương trình sử dụng `Resolve API`, nhưng nó thể hiện dấu hiệu của kỹ thuật ẩn `API`. Đây có thể là một dấu hiệu cho thấy chương trình này đang cố gắng thao tác với `API` một cách **gián tiếp**.
+
+# 2. Thao tác cấp thấp với các mô đun.
+
+- Đoạn mã trên không trực tiếp thể hiện rằng chương trình có sử dụng `Resolve API`, nhưng nó có dấu hiệu của việc thao tác cấp thấp với các mô đun đã tải. Điều này cho thấy một khả năng chương trình có thể đang thực hiện phân tích hoặc giám sát các mô đun `API`
+
+    ![alt text](IMG/2/image-4.png)
+
+- Truy cập vào `NtCurrentPeb()`:
+
+    `NtCurrentPeb()` truy cập đến `PEB`, trong đó chứa các thông tin của tiến trình hiện tại. Điều này không nhất thiết là `Resolve API`, nhưng nó cho thấy rằng chương trình đang cố gắng lấy **thông tin cấp thấp** về các mô-đun đã tải.
+
+- Sử dụng `InMemoryOrderModuleList`:
+
+    Trường `InMemoryOrderModuleList` chứa danh sách các mô-đun đã được tải trong tiến trình. Mã này truy cập vào danh sách đó và di chuyển qua một số liên kết của `Flink`, để đi đến một cấu trúc mô-đun cụ thể.
+
+    Nếu chương trình đang đi qua danh sách mô-đun theo cách này, rất có thể nó đang cố gắng phân tích hoặc xác định một `DLL` cụ thể hoặc đang tìm các hàm từ một mô-đun `DLL` đã được tải (trong TH này là kernell32.dll).
+
+- Tìm kiếm `BYTE` trong mô-đun:
+
+    Đoạn mã sử dụng một chuỗi _BYTE để duyệt qua mô-đun. Nếu chương trình có `Resolve API`, điều này có thể là một cách tiếp cận để tìm chữ ký byte trong bộ nhớ để **xác định tên mô-đun** hoặc **chuỗi hàm liên quan**.
+
+- Không có Gọi trực tiếp đến `Resolve API`:
+
+    Tuy mã giả này không có các hàm API cụ thể để giao tiếp ra ngoài qua `Resolve API`, nhưng thao tác với `PEB` và `LDR` là dấu hiệu của việc chương trình này đang cố gắng khám phá các mô-đun, có thể là để định vị `API` hoặc các hàm đặc thù mà nó quan tâm.
+
+- EM CHỈ THẤY MỖI TRONG CHƯƠNG TRÌNH CỦA EM CÓ NHỮNG DẤU HIỆU KHẢ NGHI ĐÓA THUI Ạ, MẶC DÙ NHỮNG ĐIỀU ĐÓA CŨNG CHƯA CHẮC LÀ CÓ CHO LẮM Ạ.
 
