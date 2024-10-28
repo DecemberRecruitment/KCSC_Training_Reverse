@@ -196,23 +196,23 @@
     
     - Để có thể quan sát được opcode trong IDA, ta vào **Options -> General**, trong **Disassembly -> Display disassembly line parts -> Number of opcode byte (non-graph) -> Chỉnh sang số opcode muốn quan sát**.
 
-        ![alt text](IMG/3/image.png)
+        ![alt text](IMG/2/image.png)
 
-        ![alt text](IMG/3/image-2.png)
+        ![alt text](IMG/2/image-2.png)
 
-        ![alt text](IMG/3/image-3.png)
+        ![alt text](IMG/2/image-3.png)
 
     - Để kiểm chứng sự thay thế opcode khi chúng ta đặt breakpoint, ta sẽ thực hiện xem giá trị mà chương trình đọc được:
 
-        ![alt text](IMG/3/image-4.png)
+        ![alt text](IMG/2/image-4.png)
 
         Ta thấy sau câu lệnh trên thì giá trị trong thanh cl sẽ là byte opcode tại địa chỉ `007A1300`.
 
-        ![alt text](IMG/3/image-5.png)
+        ![alt text](IMG/2/image-5.png)
 
         Nhưng tại địa chỉ đó tui thực hiện đặt một breakpoint thì lúc này opcode đọc được sẽ là `0xCC` thay vì `0x55` như trên hình.
 
-        ![alt text](IMG/3/image-6.png)
+        ![alt text](IMG/2/image-6.png)
 
 - Hàm `RC4`:
 
@@ -270,15 +270,15 @@
 
     Trong hàm này thì có sự thay đổi key ở đoạn mã sau (liên quan đến check opcode `0x33`), còn về phần mã hóa `RC4` thì như bình thường:
 
-    ![alt text](IMG/3/image-7.png)
+    ![alt text](IMG/2/image-7.png)
 
     Như vậy khi ta truy ngược lại giá trị `key` được truyền vào trong hàm thì `key` xuất hiện ở trong hàm `main`:
 
-    ![alt text](IMG/3/image-8.png)
+    ![alt text](IMG/2/image-8.png)
     
     Giá trị đúng mà hàm này sẽ trả về là `0x13` (tức là tìm thấy opcode `0xCC` ở trong hàm main, và đương nhiên là opcode này ko phải từ breakpoint gây ra). Cụ thể:
 
-    ![alt text](IMG/3/image-9.png)
+    ![alt text](IMG/2/image-9.png)
 
     Để có thể né được việc antidebug check breakpoint rất đơn giản, trước khi vô hàm `check_opcode_0x33` thì ta thực hiện đặt gỡ hết breakpoint tại hàm được truyền vào (chứ chúng ta ngồi mà mò hoặc đoán thì khả năng xịt cũng rất cao vì ban đầu tui cũng ngồi đoán vào không nhận ra được có opcode 0xCC ở trong hàm mà ko phải là xuất phát từ breakpoint).
 
