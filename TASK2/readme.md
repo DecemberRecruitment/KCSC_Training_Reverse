@@ -312,7 +312,7 @@
     # D1t_m3_H4_N41
     ```
 
-# 3_ANTI_DEBUG3
+## 3_ANTI_DEBUG3
 
 - Chall: [FILE](CHALL/3_ANTI_DEBUG3.rar).
 
