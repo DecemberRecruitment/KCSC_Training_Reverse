@@ -322,7 +322,7 @@
 
     Hàm `UnhandledExceptionFilter`: Nếu một ngoại lệ xảy ra và không có trình xử lý ngoại lệ nào được đăng ký (hoặc đã đăng ký nhưng không xử lý ngoại lệ như vậy), hàm `UnhandledExceptionFilter()` sẽ được gọi. Có thể đăng ký bộ lọc ngoại lệ chưa xử lý tùy chỉnh bằng cách sử dụng `SetUnhandledExceptionFilter()`. Nhưng nếu chương trình đang chạy dưới trình gỡ lỗi, bộ lọc tùy chỉnh sẽ **không được gọi** và ngoại lệ sẽ được chuyển đến trình gỡ lỗi. Do đó, nếu bộ lọc ngoại lệ chưa xử lý được đăng ký và điều khiển được chuyển đến nó, thì quy trình **không chạy** với trình gỡ lỗi.
 
-- Ta dễ dàng nhận ra trong mã giả ở mía dưới có sự xuất hiện của một ngoại lệ khi chia cho 0:
+- Ta dễ dàng nhận ra trong mã máy ở mía dưới có sự xuất hiện của một ngoại lệ khi chia cho 0:
 
     ![alt text](IMG/3/image-1.png)
 
@@ -332,7 +332,7 @@
 
     **Mở rộng:** Thanh ghi EIP (Extended Instruction Pointer) là một thanh ghi dùng để lưu trữ địa chỉ của lệnh tiếp theo mà CPU sẽ thực thi.
 
-- Khi vào hàm `TopLevelExceptionFilter` thì ta thấy có một số đoạn mã giả khá là lạ và không thể chuyển thành mã giả được:
+- Khi vào hàm `TopLevelExceptionFilter` thì ta thấy có một số đoạn mã máy khá là lạ và không thể chuyển thành mã giả được:
 
     ![alt text](IMG/3/image-2.png)
 
