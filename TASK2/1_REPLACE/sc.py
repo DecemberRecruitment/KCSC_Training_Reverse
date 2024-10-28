@@ -1,3 +1,5 @@
+
+
 cipher = [
     # 0x56, 0x64, 0x6C, 0x4B, 0x65, 0x39, 0x75, 0x70, 0x66, 0x42, 
     # 0x46, 0x6B, 0x6B, 0x4F, 0x30, 0x4C
@@ -14,44 +16,54 @@ flag_en = [
     0x45ac6633, 0xa6786c9a
 ]
 
-input_flag = [
-    # 0x74, 0x75, 0x6E, 0x67, 0x64, 0x65, 0x70, 0x74
-    0x676E7574, 0x74706564
-]
+import sys
+from ctypes import *
 
 def encipher(v, k):
-    y = v[0]; z = v[1]; sum = 0; delta = 0x9E3779B9; n = 32
+    y = c_uint32(v[0])
+    z = c_uint32(v[1])
+    sum = c_uint32(0)
+    delta = 0x9e3779b9
+    n = 32
     w = [0,0]
-    while (n > 0):
-        y += (z << 4 ^ z >> 5) + z ^ sum + k[sum & 3]
-        y &= 4294967295 # maxsize of 32-bit integer
-        sum += delta
-        z += (y << 4 ^ y >> 5) + y ^ sum + k[sum>>11 & 3]
-        z &= 4294967295
+
+    while(n>0):
+        sum.value += delta
+        y.value += ( z.value << 4 ) + k[0] ^ z.value + sum.value ^ ( z.value >> 5 ) + k[1]
+        z.value += ( y.value << 4 ) + k[2] ^ y.value + sum.value ^ ( y.value >> 5 ) + k[3]
         n -= 1
 
-    w[0] = y; w[1] = z
+    w[0] = y.value
+    w[1] = z.value
     return w
 
 def decipher(v, k):
-    y = v[0]
-    z = v[1]
-    sum = 0xC6EF3720
-    delta = 0x9E3779B9
+    y = c_uint32(v[0])
+    z = c_uint32(v[1])
+    sum = c_uint32(0xc6ef3720)
+    delta = 0x9e3779b9
     n = 32
     w = [0,0]
-    # sum = delta<<5, in general sum = delta * n
 
-    while (n > 0):
-        z -= (y << 4 ^ y >> 5) + y ^ sum + k[sum>>11 & 3]
-        z &= 4294967295
-        sum -= delta
-        y -= (z << 4 ^ z >> 5) + z ^ sum + k[sum&3]
-        y &= 4294967295
+    while(n>0):
+        z.value -= ( y.value << 4 ) + k[2] ^ y.value + sum.value ^ ( y.value >> 5 ) + k[3]
+        y.value -= ( z.value << 4 ) + k[0] ^ z.value + sum.value ^ ( z.value >> 5 ) + k[1]
+        sum.value -= delta
         n -= 1
 
-    w[0] = y; w[1] = z
+    w[0] = y.value
+    w[1] = z.value
     return w
+
+if __name__ == "__main__":
+    # ans = []
+    # for i in range(0, len(input_flag), 2):
+    #     v = input_flag[i:i+2:1]
+    #     k = cipher
+    #     tmp = encipher(v, k)
+    #     ans += tmp
+
+    # for i in ans: print(hex(i))
 
 # for i in range(0, len(cipher), 4):
 #     result = (cipher[i + 3] << 24) | (cipher[i + 2] << 16) | (cipher[i + 1] << 8) | cipher[i]
@@ -61,23 +73,20 @@ def decipher(v, k):
 #     result = (flag_en[i + 3] << 24) | (flag_en[i + 2] << 16) | (flag_en[i + 1] << 8) | flag_en[i]
 #     print(f'0x{result:08x}', end = ', ')
 
-# ans = []
+    ans = []
 
-# for i in range(0, len(flag_en), 2):
-#     v = flag_en[i:i+2:1]
-#     k = cipher
-#     tmp = decipher(v, k)
-#     ans += tmp
+    for i in range(0, len(flag_en), 2):
+        v = flag_en[i:i+2:1]
+        k = cipher
+        tmp = decipher(v, k)
+        ans += tmp
 
-# for i in ans: print(hex(i))
+    for i in ans:
+        while i: 
+            print(end = chr(i & 0xff))
+            i >>= 8
 
-ans = []
-for i in range(0, len(input_flag), 2):
-    v = input_flag[i:i+2:1]
-    k = cipher
-    tmp = encipher(v, k)
-    ans += tmp
 
-for i in ans: print(hex(i))
+
 
 

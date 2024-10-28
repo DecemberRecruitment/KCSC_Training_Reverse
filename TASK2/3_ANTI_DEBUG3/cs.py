@@ -55,11 +55,14 @@ for i in range(40, 58):
     if i % 2 == 0: flag_en[i] ^= 0xEF
     else: flag_en[i] ^= 0xBE
 
-flag_en[59] = 0x69
-flag_en[60] = 0x6e
-flag_en[61] = 0x74
-flag_en[62] = 0x32
-flag_en[63] = 0x64
+# flag_en[59] = 0x69
+# flag_en[60] = 0x6e
+# flag_en[61] = 0x74
+# flag_en[62] = 0x32
+# flag_en[63] = 0x64
+
+for i in range(59, 64):
+    flag_en[i] = ((flag_en[i] << (i - 59)) & 0xff) | ((flag_en[i] >> (8 - (i - 59))) & 0xff)
 
 flag_en[65] ^= 0x37
 flag_en[66] ^= 0x13
