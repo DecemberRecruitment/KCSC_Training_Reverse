@@ -330,7 +330,7 @@
 
     Hàm `UnhandledExceptionFilter`: Nếu một ngoại lệ xảy ra và không có trình xử lý ngoại lệ nào được đăng ký (hoặc đã đăng ký nhưng không xử lý ngoại lệ như vậy), hàm `UnhandledExceptionFilter()` sẽ được gọi. Có thể đăng ký bộ lọc ngoại lệ chưa xử lý tùy chỉnh bằng cách sử dụng `SetUnhandledExceptionFilter()`. Nhưng nếu chương trình đang chạy dưới trình gỡ lỗi, bộ lọc tùy chỉnh sẽ **không được gọi** và ngoại lệ sẽ được chuyển đến trình gỡ lỗi. Do đó, nếu bộ lọc ngoại lệ chưa xử lý được đăng ký và điều khiển được chuyển đến nó, thì quy trình **không chạy** với trình gỡ lỗi.
 
-- Ta dễ dàng nhận ra trong mã máy ở mía dưới có sự xuất hiện của một ngoại lệ khi chia cho 0:
+- Ta nhận thấy trong mã máy ở mía dưới có sự xuất hiện của một ngoại lệ khi chia cho 0:
 
     ![alt text](IMG/3/image-1.png)
 
@@ -385,7 +385,12 @@
 
     ![alt text](IMG/3/image-17.png)
 
-    - Ở đây có 2 phần anti-debug, sử dụng [NtGlobalFlag](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-ntglobalflag) và [BeingDebugged](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-peb-beingdebugged-flag) với giá trị được gán là v3 và v4 (1 nếu phát hiện đang debug và 0 nếu không phát hiện debug) vậy giá trị tương ứng ở dưới là `0xCD` và `0xAB` (Với dấu hiệu nhận biết của `NtGlobalFlag` là ở phần `& 0x70`)
+    ![alt text](IMG/3/image-18.png)
+
+    <!-- - Ở đây có 2 phần anti-debug, sử dụng [NtGlobalFlag](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-ntglobalflag) và [BeingDebugged](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-peb-beingdebugged-flag) với giá trị được gán là v3 và v4 (1 nếu phát hiện đang debug và 0 nếu không phát hiện debug) vậy giá trị tương ứng ở dưới là `0xCD` và `0xAB` (Với dấu hiệu nhận biết của `NtGlobalFlag` là ở phần `& 0x70`). -->
+
+    - Ở đây ta thấy câu lệnh `mov eax, large fs:30h` để lấy địa chỉ của PEB trong [TIB](https://en.wikipedia.org/wiki/Win32_Thread_Information_Block). Sau đó chương trình thực hiện cộng địa chỉ đóa với `0x68` để check [NtGlobalFlag](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-ntglobalflag) (có xor với 0x70 để kiểm tra, nếu bằng 1 thì đang debug, còn bằng 0 nếu không debug), nên byte chúng ta cần sau khi xor với 0xCD là `0xCD`. 
+    - Bên dưới lấy địa chỉ PEB cộng với 2 để sử dụng [BeingDebugged](https://anti-debug.check-point.com/techniques/debug-flags.html#manual-checks-peb-beingdebugged-flag) trong cấu trúc [PEB](https://processhacker.sourceforge.io/doc/ntpebteb_8h_source.html) để kiểm tra debug hay không, giá trị 1 nếu phát hiện debug và 0 là ngược lại. Nên byte chúng ta cần là 0xAB (sau khi xor kết quả với 0xAB).
 
 - Tiếp theo là đến hàm `sub_DF1400()`:
 
@@ -417,11 +422,18 @@
 
     ![alt text](IMG/3/image-13.png)
 
-    Với [int 2Dh](https://anti-debug.checkpoint.com/techniques/assembly.html#int2d): sau lệnh này sẽ thực hiện ngắt phần mềm với mã ngắt là `0x2D`, nếu có chương trình gỡ lỗi đang chạy, chương trình sẽ điều hướng đến luồng khác. Còn nếu không phát hiện đang debug thì chương trình sẽ thực hiện tạo ra một ngoại về và nhảy vào luồng xử lý ngoại lệ. Như trên hình mình tô màu xanh biểu thị cho block cần nhảy vào. Phần này biến đổi kí tự thứ 60 đến 64 với nội dung như sau:
+    Với [int 2Dh](https://anti-debug.checkpoint.com/techniques/assembly.html#int2d): sau lệnh này sẽ thực hiện ngắt phần mềm với mã ngắt là `0x2D`, nếu có chương trình gỡ lỗi đang chạy, chương trình sẽ điều hướng đến luồng khác. Còn nếu không phát hiện đang debug thì chương trình sẽ thực hiện tạo ra một ngoại về và nhảy vào luồng xử lý ngoại lệ. 
+    
+    `ms_exc.registration.TryLevel` gặp ngoại lệ, chương trình sẽ điều hướng vào block chứa lệnh `ms_exc.old_esp`, tuy nhiên nếu debug thì trình gỡ lỗi không được gọi và không thể xử lý, nếu cố gắng bỏ qua thì sẽ đi vào luồng sai (Trong hình dưới là khối màu đỏ là sai):
+
+    ![alt text](IMG/3/image-19.png)
+
+
+    Như trên hình mình tô màu xanh biểu thị cho block cần nhảy vào. Phần này biến đổi kí tự thứ 60 đến 64 với nội dung như sau:
 
     ![alt text](IMG/3/image-14.png)
 
-    Với [int 3](https://anti-debug.checkpoint.com/techniques/assembly.html#int3): Nếu trình gỡ lỗi có mặt, quyền điều khiển sẽ không được trao cho trình xử lý ngoại lệ. Như vậy chỗ này là chương trình sẽ lại cần nhảy vô ngoại lệ tiếp (do IDA quá mạnh trong việc xử lý các ngoại lệ này và đã biết được những loại ngoại lệ này sẽ hướng chương trình đến phần nào nên việc debug khá là dễ thì IDA trong 2 phần trên đều điều hướng vào luồng chuẩn).
+    Với [int 3](https://anti-debug.checkpoint.com/techniques/assembly.html#int3): Cũng giống như với `int 2Dh`, nếu ở lệnh `ms_exc.registration.TryLevel` gặp ngoại lệ thì chương trình sẽ nhảy đến block chứa lệnh `ms_exc.old_esp` (ở đây khối này có nội dung như sau):
 
     ![alt text](IMG/3/image-15.png)
 
