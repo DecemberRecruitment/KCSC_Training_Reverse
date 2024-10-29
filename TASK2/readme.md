@@ -24,7 +24,7 @@
 
     - __&NumberOfBytesWritten__: Con trỏ tới một biến nhận số byte đã ghi.
 
-- Sử lý xong phần này ta đến với chương trình chính của chúng ta xong hàm main roài thực hiện xem hàm encrpyt là hàm gì, thì dễ dàng nhận ra đây là hàm mã hóa theo thuật toán XTEA:
+- Xử lý xong phần này ta đến với chương trình chính của chúng ta xong hàm main roài thực hiện xem hàm encrpyt là hàm gì, thì dễ dàng nhận ra đây là hàm mã hóa theo thuật toán `XTEA`:
 
     ![alt text](IMG/1/image-2.png)
 
@@ -32,7 +32,7 @@
 
     ![alt text](IMG/1/image-3.png)
 
-- Ta đã biết được chương trình mã hóa theo thuật toán gì roài thì thực hiện tìm phần giải mã trên mạng roài viết source code thoai:
+- Bây giờ chúng ta thực hiện viết source code:
 
     ```python
     cipher = [
@@ -188,7 +188,7 @@
 
     Hàm này có 2 tham số được truyền vào đó chính là địa chỉ của một hàm và số lượng opcode của hàm đó.
 
-    Chức năng của hàm này thực hiện duyệt lần lượt từng opcode có trong hàm, nếu duyệt mà gặp opcode `0xCC` thì sẽ trả về giá trị `0x13`, còn nếu duyệt hết mà không gặp opcode `0xCC` thì sẽ thực hiện trả về giá trị `0x37`. (0x33 = 0x99 ^ 0x55)
+    Chức năng của hàm này thực hiện duyệt lần lượt từng opcode có trong hàm, nếu duyệt mà gặp opcode `0xCC` thì sẽ trả về giá trị `0x13`, còn nếu duyệt hết mà không gặp opcode `0xCC` thì sẽ thực hiện trả về giá trị `0x37`. (`0xCC` = 0x99 ^ 0x55).
 
     Opcode `0xCC` là một lệnh ngắt được dùng khi chúng ta gỡ lỗi (nó tương đương với **int 3**). Lệnh này được sử dụng trong trình gỡ lỗi IDA. Khi chúng ta thực hiện đặt một **breakpoint** tại 1 địa chỉ nhất định, trình gỡ lỗi sẽ thay thế opcode tại địa chỉ đóa bằng `0xCC`, điều này sẽ giúp chương trình dừng lại đúng thời điểm **breakpoint**.
 
@@ -213,6 +213,14 @@
         Nhưng tại địa chỉ đó tui thực hiện đặt một breakpoint thì lúc này opcode đọc được sẽ là `0xCC` thay vì `0x55` như trên hình.
 
         ![alt text](IMG/2/image-6.png)
+
+    - Giải thích thêm một xíu về phát hiện ra opcode `0xCC` ở trong hàm main khi chúng ta không thực hiện đặt breakpoint:
+
+        ![alt text](IMG/2/image-10.png)
+
+        ![alt text](IMG/2/image-11.png)
+
+        Opcode `8D 55 xx`: tương đương với với lệnh Assembly là `lea edx, [ebp + xx]`, input được lưu ở `[ebp - 34h]` nhưng mà opcode không lưu được số âm thế nên nó sẽ chuyển sang dạng mod 256 (biểu thị dưới dạng 1 byte), tức là `-0x34 (mod 256) = 0xCC` vậy nên opcode 8D 55 CC tương đương với lệnh `lea edx, [ebp + input]`.
 
 - Hàm `RC4`:
 
@@ -280,9 +288,9 @@
 
     ![alt text](IMG/2/image-9.png)
 
-    Để có thể né được việc antidebug check breakpoint rất đơn giản, trước khi vô hàm `check_opcode_0x33` thì ta thực hiện đặt gỡ hết breakpoint tại hàm được truyền vào (chứ chúng ta ngồi mà mò hoặc đoán thì khả năng xịt cũng rất cao vì ban đầu tui cũng ngồi đoán vào không nhận ra được có opcode 0xCC ở trong hàm mà ko phải là xuất phát từ breakpoint).
+    Để có thể né được việc antidebug check breakpoint rất đơn giản, trước khi vô hàm `check_opcode_0x33` thì ta thực hiện đặt gỡ hết breakpoint tại hàm được truyền vào.
 
-- Sau khi biết được cách có thể biết được giá trị trả về đúng của hàm `check_opcode_0x33` thì việc làm còn lại chỉ là thủ tục:
+- Sau khi biết được cách có thể biết được giá trị trả về đúng của hàm `check_opcode_0x33` thì ta tiến hành viết source code:
 
     ```python
     key = [
@@ -332,11 +340,11 @@
 
     **Mở rộng:** Thanh ghi EIP (Extended Instruction Pointer) là một thanh ghi dùng để lưu trữ địa chỉ của lệnh tiếp theo mà CPU sẽ thực thi.
 
-- Khi vào hàm `TopLevelExceptionFilter` thì ta thấy có một số đoạn mã máy khá là lạ và không thể chuyển thành mã giả được:
+- Khi vào hàm `TopLevelExceptionFilter` thì ta thấy có một số đoạn mã máy    khá là lạ và không thể chuyển thành mã giả được:
 
     ![alt text](IMG/3/image-2.png)
 
-    Chương trình đang cố tình nhét thêm những **byte rác** vào chương trình để làm khó chúng ta, vậy ta sẽ thực hiện chuyển các lệnh của mã máy sang `data` để xem sao (nhấn `D` ở cái đoạn chú thích đỏ lòm).
+    Chương trình đang cố tình nhét thêm những **byte rác** vào chương trình để làm khó chúng ta, vậy ta sẽ thực hiện chuyển các lệnh của mã máy sang `data` để xem sao (nhấn `D` ở cái đoạn chú thích đỏ).
 
     ![alt text](IMG/3/image-3.png)
 
@@ -373,35 +381,23 @@
     }
     ```
 
-    Phân tích hàm này ở mã giả.
+    File ban đầu có một sự nhầm một xíu ở file ở đoạn anti-debug chỗ này, điều này khiến cho mình đoán sai đoạn này. Sau khi chỉnh file xong thì đoạn mã giả gen này sẽ như sau:
 
-    - `v3 = NtCurrentPeb();`: `NtCurrentPeb()` là một hàm của Windows API dùng để lấy địa chỉ của **Process Environment Block (PEB)** cho tiến trình hiện tại. `PEB` chứa thông tin quan trọng về tiến trình, bao gồm môi trường, trạng thái, các cờ kiểm soát, và nhiều thông tin khác. Kết quả của `NtCurrentPeb()` được gán cho `v3`, vì vậy `v3` giờ là một con trỏ trỏ đến cấu trúc `_PEB` của tiến trình.
+    ![alt text](IMG/3/image-17.png)
 
-    - `v4 = v3 != (struct _PEB *)0xFFFF4040 && ((int)v3[0x54].AtlThunkSListPtr & 0x70) != 0;`:
-
-        Đây là một phép kiểm tra điều kiện gán kết quả (true hoặc false) cho biến v4. Điều kiện bao gồm hai phần được kết hợp bằng toán tử AND (&&):
-
-        Phần 1: ___v3 != (struct _PEB *)0xFFFF4040___: Kiểm tra xem con trỏ v3 (PEB của tiến trình hiện tại) có khác địa chỉ 0xFFFF4040 hay không. `0xFFFF4040` có thể là một giá trị đặc biệt được sử dụng để phát hiện môi trường giả lập hoặc một kỹ thuật anti-debug. Phần này nhằm xác nhận v3 không trỏ đến một địa chỉ không mong muốn (nơi mà PEB không hợp lệ).
-    
-        Phần 2: ___((int)v3[0x54].AtlThunkSListPtr & 0x70) != 0___: Truy cập vào trường `AtlThunkSListPtr` của `PEB` tại độ lệch (offset) 0x54. Ép kiểu `AtlThunkSListPt`r về kiểu int, sau đó thực hiện phép toán AND với `0x70`. `0x70` có dạng nhị phân là `0111 0000`, vì vậy phép AND chỉ kiểm tra các bit thứ 4, 5, và 6 của `AtlThunkSListPtr`. Nếu giá trị của **((int)v3[0x54].AtlThunkSListPtr & 0x70)** khác 0, điều kiện này là true.
-
-        Tóm lại: câu lệnh này v4 mà giá trị bằng 1 (true) tức là chương trình đang thực hiện debug trên máy ảo, còn nếu bằng 0 (false) thì chương trihf đang không debug trên máy ảo bởi vì việc kiểm tra giá trị cụ thể trong `PEB` hoặc các bit của `AtlThunkSListPtr` là một phương pháp phổ biến để phát hiện trình gỡ lỗi. Một số trình gỡ lỗi hoặc **môi trường ảo** có thể thay đổi hoặc thiết lập các bit này theo cách không như bình thường, giúp chương trình phát hiện ra mình đang bị giám sát (do chúng ta đang không debug trên môi trường ảo thế nên đoạn này luôn trả về `false` khi ta debug, hay còn gọi là anti-VM), còn nếu debug trên máy ảo thì cook lun từ câu lệnh này roài.
-
-        ![alt text](IMG/3/image-6.png)
-
-    - `0xAB = v3->BeingDebugged ^ 0xAB;`: còn đoạn này chỉ là sử dụng `BeingDebugged` trong cấu trúc `PEB` (trả về 1 đang debug và 0 đang ko debug), chỗ này đổi patch thành `^ 0xAA` thay vì `^ 0xAB` của chương trình là sau debug khỏi lo nghĩ.
+    - Ở đây có 2 phần anti-debug, sử dụng [NtGlobalFlag](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-ntglobalflag) và [BeingDebugged](https://anti-debug.checkpoint.com/techniques/debug-flags.html#manual-checks-peb-beingdebugged-flag) với giá trị được gán là v3 và v4 (1 nếu phát hiện đang debug và 0 nếu không phát hiện debug) vậy giá trị tương ứng ở dưới là `0xCD` và `0xAB` (Với dấu hiệu nhận biết của `NtGlobalFlag` là ở phần `& 0x70`)
 
 - Tiếp theo là đến hàm `sub_DF1400()`:
 
     ![alt text](IMG/3/image-7.png)
 
-    Chúng ta lại thấy 0xCC được xuất hiện ửo đây để thực hiện chống breakpoint lung tung, trong đóa v1 là số opcode của chương trình. Nên hàm này sẽ trả về giá trị 0xBEEF.
+    Chúng ta lại thấy 0xCC được xuất hiện ở đây để thực hiện chống breakpoint lung tung, trong đóa v1 là số opcode của chương trình. Nên hàm này sẽ trả về giá trị 0xBEEF.
 
 - Ban đầu chương trình sẽ thực hiện xor 17 kí tự đầu của flag với 1, kí tự thứ 18 giữ nguyên, rùi thực hiện truyền địa chỉ của kí tự thứ 19 vào hàm `sub_DF1460`:
 
     ![alt text](IMG/3/image-9.png)
 
-- Trong hàm `sub_DF1460` có gọi đến hàm `loc_DF1330` nhưung có vẻ hàm đó đang bị chèn thêm 1 số byte rác vào nên cũng không thể gen ra mã giả được:
+- Trong hàm `sub_DF1460` có gọi đến hàm `loc_DF1330` nhưng có vẻ hàm đó đang bị chèn thêm 1 số byte rác vào nên cũng không thể gen ra mã giả được:
 
     ![alt text](IMG/3/image-10.png)
 
@@ -411,7 +407,7 @@
 
     Như vậy từ kí tự thứ 19 đến kí tự thứ 26 của flag được xor với `0xAB`, kí tự thứ 27 giữ nguyên. Rùi từ kí tự thứ 28 đến kí tự thứ 39 thực hiện mã hóa theo cú pháp `((2 * a[i]) | 1) ^ (i + 0xCD)`. Thực hiện trả về giá trị của địa chỉ kí tự thứ 41 (kí tự 40 giữ nguyên).
 
-- Như vậy từ kí tự thứ 41 đến kí tự thứ 58 chương trình sẽ lấy 2 byte liên tiếp 1 rùi xor với 0xBEEF.
+- Như vậy từ kí tự thứ 41 đến kí tự thứ 58 chương trình sẽ lấy 2 byte liên tiếp 1 rùi xor với `0xBEEF`.
 
     ![alt text](IMG/3/image-12.png)
     
@@ -421,11 +417,11 @@
 
     ![alt text](IMG/3/image-13.png)
 
-    Với `int 2Dh`: Windows sử dụng thanh ghi EIP làm địa chỉ ngoại lệ và sau đó tăng giá trị thanh ghi EIP. Windows cũng kiểm tra giá trị của thanh ghi EAX trong khi `INT2D` được thực thi. Nếu giá trị là 1, 3 hoặc 4 trên tất cả các phiên bản Windows hoặc 5 trên Vista+, địa chỉ ngoại lệ sẽ tăng thêm một. Lệnh này có thể gây ra sự cố cho một số trình gỡ lỗi vì sau khi buộc tội `EIP`, byte theo sau lệnh `INT2D` sẽ bị bỏ qua và quá trình thực thi có thể tiếp tục từ lệnh bị hỏng. Trong ví dụ, chúng tôi đặt lệnh `NOP` một byte sau `INT2D` để bỏ qua lệnh này trong mọi trường hợp. Nếu chương trình được thực thi mà không có trình gỡ lỗi, quyền điều khiển sẽ được chuyển cho trình xử lý ngoại lệ. Như vậy ở chỗ này là chương trình sẽ cần nhảy vô ngoại lệ thì sẽ là luông chuẩn, như trên hình mình tô màu xanh biểu thị cho block cần nhảy vào. Phần này biến đổi kí tự thứ 60 đến 64 với nội dung như sau:
+    Với [int 2Dh](https://anti-debug.checkpoint.com/techniques/assembly.html#int2d): sau lệnh này sẽ thực hiện ngắt phần mềm với mã ngắt là `0x2D`, nếu có chương trình gỡ lỗi đang chạy, chương trình sẽ điều hướng đến luồng khác. Còn nếu không phát hiện đang debug thì chương trình sẽ thực hiện tạo ra một ngoại về và nhảy vào luồng xử lý ngoại lệ. Như trên hình mình tô màu xanh biểu thị cho block cần nhảy vào. Phần này biến đổi kí tự thứ 60 đến 64 với nội dung như sau:
 
     ![alt text](IMG/3/image-14.png)
 
-    Với `int 3`: Hướng dẫn INT3 là một sự gián đoạn được sử dụng như một điểm dừng phần mềm. Nếu không có trình gỡ lỗi, sau khi đến hướng dẫn `INT3`, ngoại lệ `EXCEPTION_BREAKPOINT` (`0x80000003`) được tạo ra và trình xử lý ngoại lệ sẽ được gọi. Nếu trình gỡ lỗi có mặt, quyền điều khiển sẽ không được trao cho trình xử lý ngoại lệ. Như vậy chỗ này là chương trình sẽ lại cần nhảy vô ngoại lệ tiếp (do IDA quá mạnh trong việc xử lý các ngoại lệ này và đã biết được những loại ngoại lệ này sẽ hướng chương trình đến phần nào nên việc debug khá là dễ thì IDA trong 2 phần trên đều điều hướng vào luồng chuẩn).
+    Với [int 3](https://anti-debug.checkpoint.com/techniques/assembly.html#int3): Nếu trình gỡ lỗi có mặt, quyền điều khiển sẽ không được trao cho trình xử lý ngoại lệ. Như vậy chỗ này là chương trình sẽ lại cần nhảy vô ngoại lệ tiếp (do IDA quá mạnh trong việc xử lý các ngoại lệ này và đã biết được những loại ngoại lệ này sẽ hướng chương trình đến phần nào nên việc debug khá là dễ thì IDA trong 2 phần trên đều điều hướng vào luồng chuẩn).
 
     ![alt text](IMG/3/image-15.png)
 
@@ -435,7 +431,7 @@
 
     ![alt text](IMG/3/image-16.png)
 
-- Sau khi phân tích kĩ thì việc viết source code chỉ là thủ tục và mình sẽ ko giải thích gì nhiều:
+- Sau khi phân tích kĩ file thì việc viết source code chỉ là thủ tục:
 
     ```python
     flag_en = [
