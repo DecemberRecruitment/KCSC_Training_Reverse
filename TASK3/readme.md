@@ -29,7 +29,7 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
 
     ![alt text](IMG/wu/image-2.png)
 
-- `CryptHashData(phHash, (BYTE*)link_Ytb, strlen(link_Ytb), 0)` ():
+- `CryptHashData(phHash, (BYTE*)link_Ytb, strlen(link_Ytb), 0)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-crypthashdata)):
 
     ![alt text](IMG/wu/image-3.png)
 
@@ -39,7 +39,7 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
     char link_Ytb[100] = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
     ```
 
-- `CryptGetHashParam(phHash, HP_HASHVAL, (BYTE*)_32_byte, &pdwDataLen, 0)`: 
+- `CryptGetHashParam(phHash, HP_HASHVAL, (BYTE*)_32_byte, &pdwDataLen, 0)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptgethashparam)): 
 
     ![alt text](IMG/wu/image-4.png)
 
@@ -50,15 +50,15 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
     unsigned char _32_byte[32];
     ```
 
-- `CryptDestroyHash(phHash)`: 
+- `CryptDestroyHash(phHash)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptdestroyhash)): 
 
     ![alt text](IMG/wu/image-5.png)
 
-- `CryptReleaseContext(phProv, 0)`:
+- `CryptReleaseContext(phProv, 0)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptreleasecontext)):
 
     ![alt text](IMG/wu/image-6.png)
 
-- `CryptAcquireContextW(&phProv, 0, L"Microsoft Enhanced RSA and AES Cryptographic Provider", PROV_RSA_AES, CRYPT_VERIFYCONTEXT)`:
+- `CryptAcquireContextW(&phProv, 0, L"Microsoft Enhanced RSA and AES Cryptographic Provider", PROV_RSA_AES, CRYPT_VERIFYCONTEXT)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptacquirecontexta)):
 
     ![alt text](IMG/wu/image-7.png)
 
@@ -69,11 +69,11 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
     dwFlags = 0xF0000000
     ```
 
-- `CryptImportKey(phProv, (BYTE*)pbData, 0x2C, 0, 0, &phKey)`:
+- `CryptImportKey(phProv, (BYTE*)pbData, 0x2C, 0, 0, &phKey)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptimportkey)):
 
     ![alt text](IMG/wu/image-9.png)
 
-- `CryptSetKeyParam(phKey, KP_MODE, (BYTE*)v6, 0)`:
+- `CryptSetKeyParam(phKey, KP_MODE, (BYTE*)v6, 0)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptsetkeyparam)):
 
     ![alt text](IMG/wu/image-10.png)
 
@@ -90,7 +90,7 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
 	};
     ```
 
-- `CryptSetKeyParam(phKey, KP_IV, (BYTE*)map, 0)`:
+- `CryptSetKeyParam(phKey, KP_IV, (BYTE*)map, 0)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptsetkeyparam)):
 
     ![alt text](IMG/wu/image-11.png)
 
@@ -106,7 +106,7 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
 	};
     ```
 
-- `CryptEncrypt(phKey, 0, 1, 0, (BYTE*)flag, &pdwDataLen, 0x400)`:
+- `CryptEncrypt(phKey, 0, 1, 0, (BYTE*)flag, &pdwDataLen, 0x400)` ([tham khảo](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptencrypt)):
 
     ![alt text](IMG/wu/image-12.png)
 
@@ -313,7 +313,11 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
 
     Sử dụng thuật toán hash FN1-1a (với 2 hằng số đặc trưng là `0x1000193` và `0x811C9DC5`) để tính toán rùi so sánh với `funcHash`, nếu thấy thì hàm sẽ tiếp tục duyệt các mục trong module để tính toán lại giá trị băm khác rùi so sánh với `moduleHash`. Nếu thấy thì sẽ trả về địa chỉ của hàm WinAPI cần tìm.
 
-- Chương trình dùng hàm `RtlAddVectoredExceptionHandler` để đăng ký một **vectored exception handler**, cho phép chương trình nhận và xử lý ngoại lệ. Với 2 tham số truyền vào là **First** và **Handler**. Trong đó **First = 1** để cho thấy mức độ ưu tiên cao hơn ở đầu danh sách xử lý, còn **Handler** sẽ trỏ tới hàm xử lý ngoại lệ khi ngoại lệ xảy ra.
+    [Thao khảo 1](https://www.zscaler.com/blogs/security-research/dodgebox-deep-dive-updated-arsenal-apt41-part-1#technical-analysis)
+
+    
+
+- Chương trình dùng hàm [RtlAddVectoredExceptionHandler](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-addvectoredexceptionhandler) để đăng ký một **vectored exception handler**, cho phép chương trình nhận và xử lý ngoại lệ. Với 2 tham số truyền vào là **First** và **Handler**. Trong đó **First = 1** để cho thấy mức độ ưu tiên cao hơn ở đầu danh sách xử lý, còn **Handler** sẽ trỏ tới hàm xử lý ngoại lệ khi ngoại lệ xảy ra.
 
     ```C
     // positive sp value has been detected, the output may be wrong!
