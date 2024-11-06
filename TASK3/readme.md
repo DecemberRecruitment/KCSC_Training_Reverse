@@ -374,11 +374,11 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
 
 ## BONUS
 
-- Có thể thấy khi ta làm bài này thì ta thấy chúng ta hay phải nhấn để có IDA xử lý mỗi khi gặp ngoại lệ:
+- Có thể thấy khi ta làm bài này thì ta thấy chúng ta hay phải click mỗi khi có ngoại lệ xảy ra để IDA xử lý :
 
     ![alt text](IMG/bonus/image.png)
 
-- Chúng ta có thể sử dụng IDAPython để có thể xử pass qua mà không cần IDA xử lý phần ngoại lệ này. Do việc xử lý ngoại lệ chỉ thay đổi giá trị thanh `eax` và giá trị thanh `rip` (trong đóa thanh `eax` trả về địa chỉ còn thanh `rip` tăng thêm 4 đơn vị). Chúng ta có thể viết câu lệnh để thay thế hàm xử lý ngoại lệ này:
+- Chúng ta có thể sử dụng viết script để có thể pass qua mà không cần IDA xử lý phần ngoại lệ này. Do việc xử lý ngoại lệ chỉ thay đổi giá trị thanh `eax` và giá trị thanh `rip` (trong đóa thanh `eax` trả về địa chỉ còn thanh `rip` tăng thêm 4 đơn vị). Chúng ta có thể viết script để thay thế hàm xử lý ngoại lệ này:
 
     ```python
     set_reg_value(Appcall.sub_7FF6B6E61000(idaapi.get_reg_val("r8"),idaapi.get_reg_val("r9")).value, "rax")
