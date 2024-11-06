@@ -371,3 +371,79 @@ Làm bài dưới đây, viết WU và giải thích kĩ về những kĩ thuậ
         }
     }
     ```
+
+## BONUS
+
+- Có thể thấy khi ta làm bài này thì ta thấy chúng ta hay phải nhấn để có IDA xử lý mỗi khi gặp ngoại lệ:
+
+    ![alt text](IMG/bonus/image.png)
+
+- Chúng ta có thể sử dụng IDAPython để có thể xử pass qua mà không cần IDA xử lý phần ngoại lệ này. Do việc xử lý ngoại lệ chỉ thay đổi giá trị thanh `eax` và giá trị thanh `rip` (trong đóa thanh `eax` trả về địa chỉ còn thanh `rip` tăng thêm 4 đơn vị). Chúng ta có thể viết câu lệnh để thay thế hàm xử lý ngoại lệ này:
+
+    ```python
+    set_reg_value(Appcall.sub_7FF6B6E61000(idaapi.get_reg_val("r8"),idaapi.get_reg_val("r9")).value, "rax")
+    set_reg_value(idaapi.get_reg_val("rip") + 4, "rip")
+    ```
+
+    Vậy là mỗi khi đến câu lệnh `div rax` thì chúng ta thực hiện chạy script này (script này có nhiệm vụ như phần xử lý ngoại lệ trên, chú ý khi chạy script là không được để chương trình bị lỗi ngoại lệ chia cho 0 trước, nếu chương trình đã dính ngoại lệ chia cho 0 thì script không chạy được)).
+
+# Một số câu lệnh IDAPython thường dùng.
+
+## get_reg_val()
+
+- Câu lệnh này dùng để lấy giá trị thanh ghi.
+
+    ```python
+    import idaapi
+    eax_value = idaapi.get_reg_val("eax")
+    print(hex(eax_value)) # in giá trị hexa của thanh eax
+    # print(hex(get_reg_val("eax")))
+    ```
+
+## set_reg_val()
+
+- Câu lệnh này dùng để cập nhật/thay đổi giá trị thanh ghi.
+
+    ```python
+    import idaapi
+    idaapi.set_reg_val("eax", 0x12345678) # gán eax = 0x12345678
+    # idaapi.set_reg_val("eax", 0x12345678)
+    ```
+
+## get_bytes()
+
+- Lấy giá trị của 1 ô nhớ:
+
+    ```python
+    import idaapi
+
+    # Đọc 4 byte (32-bit) từ địa chỉ 0x00007FF6B6E6258D
+    value = idaapi.get_bytes(0x00007FF6B6E6258D, 4) # đọc 4 byte từ địa chỉ 0x00007FF6B6E6258D
+    print(hex(value))
+    ```
+
+    `get_byte()`, `get_word()`, `get_dword()`, `get_qword()`: những hàm này chỉ cho phép đọc 1 giá trị duy nhất từ địa chỉ.
+
+    `get_bytes(addr, num)`: cho phép đọc nhiều byte từ địa chỉ đó.
+
+## patch_bytes()
+
+- Ghi vào một địa chỉ cụ thể:
+
+    ```python
+    import idaapi
+
+    # Ghi giá trị 0x00007FF6B6E6258D vào bộ nhớ tại địa chỉ 0x1000
+    idaapi.patch_bytes(0x00007FF6B6E6258D, b'\x78\x56\x34\x12')
+    ```
+
+    Chú ý dữ liệu điền vào là byte, nếu ta không đặt là byte thì nó mặc định là string và sẽ là giá trị mã `ASCII`.
+
+## Appcall
+
+- Sử dụng `Appcall` để gọi hàm trong binary với các tham số tùy chỉnh. Đây là một cách tiện dụng để kiểm tra và mô phỏng các hàm mà không cần phải thực thi toàn bộ chương trình hoặc trong TH chúng ta không thể muốn kiểm tra xem hàm đó trả về giá trị như thế nào.
+
+    ```python
+    Appcall.func_name(param1, param2).value
+    ```
+
