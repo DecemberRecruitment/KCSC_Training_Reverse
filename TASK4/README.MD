@@ -481,16 +481,26 @@
 
     Lúc này ta nhận ra việc tạo ra một handle `hFile` được tạo trước hàm main, ta tiến hành đặt break-point và F9 lại.
 
-    > Khi ta thấy có hàm được gọi trước hàm main, nếu ta `xref` hàm `main` thì ta sẽ thấy chương trình sẽ như sau: 
+-  Khi ta thấy có hàm được gọi trước hàm main, nếu ta `xref` hàm `main` thì ta sẽ thấy chương trình sẽ như sau: 
     
     ![alt text](IMG/2/image-5.png)
 
-    > Ở đây chương trình có có sử dụng 2 hàm là `initterm` và `initterm_e`. Hai hàm này được sử dụng trong quá trình khởi động để gọi các hàm khởi tạo trước khi bắt đầu thực thi mã chính của chương trình. Thì ta thấy trong hàm `initterm` có 3 hàm được gọi trước khi bắt đầu vào hàm main như sau:
+    Ở đây chương trình có có sử dụng 2 hàm là `initterm` và `initterm_e`. Hai hàm này được sử dụng trong quá trình khởi động để gọi các hàm khởi tạo trước khi bắt đầu thực thi mã chính của chương trình. Thì ta thấy trong hàm `initterm` có 3 hàm được gọi trước khi bắt đầu vào hàm main như sau:
 
     ![alt text](IMG/2/image-7.png)
 
+    Ở đây có 3 hàm được gọi trước hàm main, bao gồm hàm `sub_1F340E`, `j__1`, `j__4`. Hàm `sub_1F340E` thiết lập cơ chế xử lý lỗi, hàm `j__1` tạo process hollowing, `j__4` để tạo registry. Chi tiết các hàm như sau:
 
-- Sau khi đặt lại break-point vào những hàm được gọi trước hàm main thì ta có thể tóm tắt lại chương trình sẽ làm những điều sau:
+- Hàm `sub_1F340E`:
+
+    ```asm
+    call    ds:SetUnhandledExceptionFilter
+    call    UserMathErrorFunction
+    ```
+
+    hàm này sử dụng 2 hàm chính là **SetUnhandledExceptionFilter** (dể thiết lập bộ lọc ngoại lệ toàn cục nếu có lỗi) và **UserMathErrorFunction** dùng để đăng kí và xử lý các lỗi toán học.
+
+- Hàm `j__1`: hàm tạo tiến trình process Hollowing và thực hiện kết nối với một name pipe. Chi tiết như sau:
 
     - **Tạo một process ở trạng thái treo**: bằng việc sử dụng hàm `CreateProcessW()` với tham số `dwCreationFlags` là `CREATE_SUSPENDED`, tiến trình ở trạng thái treo là `cmd.exe`.
 
@@ -537,33 +547,38 @@
 
         ![alt text](IMG/2/image-20.png)
 
-    - **Tạo một khóa** trong Windows Registry và **đặt dữ liệu** vào một giá trị cụ thể của khóa: 
+- Hàm `j__4`: có chức năng chính là **tạo một khóa** trong Windows Registry và **đặt dữ liệu** vào một giá trị cụ thể của khóa: 
     
-        `RegCreateKeyExA(0x80000000, &v37, 0, 0, 0, 0x20006, 0, &v27, 0)`: ý nghĩa là tạo một khóa con trong HKEY_CLASSES_ROOT (`0x80000000`) với tên được lưu là `.KCSC\shell\open\command`. Nếu thành công hàm sẽ trả về giá trị `ERROR_SUCCESS` (thường là 0).
+    `RegCreateKeyExA(0x80000000, &v37, 0, 0, 0, 0x20006, 0, &v27, 0)`: ý nghĩa là tạo một khóa con trong HKEY_CLASSES_ROOT (`0x80000000`) với tên được lưu là `.KCSC\shell\open\command`. Nếu thành công hàm sẽ trả về giá trị `ERROR_SUCCESS` (thường là 0).
 
-        ![alt text](IMG/2/image-21.png)
+    ![alt text](IMG/2/image-21.png)
 
-        `RegSetValueExA`: Ghi một chuỗi vào một giá trị cụ thể `cn`/`jn` trong khóa trên.
+    `RegSetValueExA`: Ghi một chuỗi vào một giá trị cụ thể `cn`/`jn` trong khóa trên.
 
-        ![alt text](IMG/2/image-22.png)
+    ![alt text](IMG/2/image-22.png)
 
-        Ta có thể sử dụng **Registry Editor** để có thể nhìn thấy chi tiết hơn những dữ liệu được khi vào khóa đó:
+    Ta có thể sử dụng **Registry Editor** để có thể nhìn thấy chi tiết hơn những dữ liệu được khi vào khóa:
 
-        ![alt text](IMG/2/image-23.png)
+    ![alt text](IMG/2/image-23.png)
 
-- Như vậy ta có thể tóm tắt lại những điều chương trình làm trước khi gọi hàm `main`:
+- Như vậy ta có thể tóm tắt lại những điều tiến trình `mixture.exe` sẽ làm:
 
-    1. Tạo process ở trạng thái dừng.
+    - `1`: Tạo process ở trạng thái dừng.
 
-    2. Tải tài nguyên và thực hiện ghi đè tài nguyên đó vào process đang dừng.
+    - `2`: Tải tài nguyên và thực hiện ghi đè tài nguyên đó vào process đang dừng.
 
-    3. Tiếp tục process sau khi ghi thành công.
+    - `3`: Tiếp tục process sau khi ghi thành công.
 
-    4. Thực hiện kiểm tra mở thành công cổng pipe hay không.
+    - `4`: Thực hiện kiểm tra mở thành công cổng pipe hay không.
 
-    5. Thực hiện ghi dữ liệu vào khóa.
+    - `5`: Thực hiện ghi dữ liệu vào khóa.
 
-- Như ta có thể thấy thì tiến trình hiện tại đang giao tiếp với một tiến trình khác đã được load vào và thực thi, vì trong tiến trình hiện tại không có việc tạo pipe mà chỉ có việc kiểm tra kết nối pipe có thành công hay không, như vậy khả năng cao là file kia thực hiện việc tạo pipe và khả năng là chứa hàm `check_flag`.
+    - `6`: Đọc dữ liệu từ bàn phím, gửi cho tiến trình ProcHollowing.
+
+    - `7`: Đọc dữ liệu mà tiến trình ProcHollowing gửi và in ra màn hình.
+
+
+- Như ta có thể thấy thì tiến trình hiện tại đang giao tiếp với một tiến trình khác đã được load vào và thực thi, vì trong tiến trình hiện tại không có việc tạo pipe mà chỉ có việc kiểm tra kết nối pipe có thành công hay không, như vậy khả năng cao là file kia thực hiện việc tạo pipe và chứa hàm `check_flag`.
 
 - Phân tích file `bin.exe`:
 
@@ -577,7 +592,7 @@
 
     ![alt text](IMG/2/image-26.png)
 
-    Chương trình sử dụng `CryptAcquireContextA`, `CryptImportKey`, `CryptSetKeyParam` để thực mã hóa input với thuật toán mã hóa là `RSA`, ta thực hiện bắt `key` và `IV` và `byte_enc` rùi ta dùng cycberchef để tìm flag thui.
+    Chương trình sử dụng `CryptAcquireContextA`, `CryptImportKey`, `CryptSetKeyParam` để thực mã hóa input với thuật toán mã hóa là `RSA`, ta thực hiện bắt `key`, `IV` và `byte_enc` trong chương trình  và thực hiện giải mã bằng cycberchef.
 
     ```txt
     Key: 31737427745F376C40675F755F326830756C646E27745F7335626D31745F3174
