@@ -183,6 +183,37 @@ b# FLAG_CHECKER
     }
     ```
 
+- Trong đó hàm `find_address_WinAPI` như sau:
+
+    ```C
+    int __cdecl sub_4B43931(int file_dll, _BYTE *name)
+    {
+    _DWORD *v3; // [esp+24h] [ebp-18h]
+    _BYTE *v4; // [esp+2Ch] [ebp-10h]
+    _DWORD *v5; // [esp+30h] [ebp-Ch]
+    unsigned int i; // [esp+34h] [ebp-8h]
+    int j; // [esp+38h] [ebp-4h]
+
+    if ( *(_WORD *)file_dll != 'ZM' )
+        return 0;
+    v3 = (_DWORD *)(*(_DWORD *)(file_dll + 0x3C) + file_dll + 0x78);
+    if ( !*v3 )
+        return 0;
+    v5 = (_DWORD *)(file_dll + *v3);
+    for ( i = 0; i < v5[6]; ++i )
+    {
+        v4 = (_BYTE *)(*(_DWORD *)(v5[8] + file_dll + 4 * i) + file_dll);
+        for ( j = 0; name[j] && v4[j] && name[j] == v4[j]; ++j )
+        ;
+        if ( !name[j] && !v4[j] )
+        return *(_DWORD *)(v5[7] + file_dll + 4 * *(unsigned __int16 *)(v5[9] + file_dll + 2 * i)) + file_dll;
+    }
+    return 0;
+    }
+    ```
+
+    Hàm này có chức năng tìm địa chỉ của hàm trong `file_dll` mà không cần đến sử dụng `GetProcAddress`. Ban đầu chương trình sẽ kiểm tra xem có đúng là tệp hợp lệ không (`*(_WORD *)file_dll != 'ZM'` vì tệp PE bắt đầu bằng chữ kí `MZ`), sau đó sẽ truy cập vào bảng `export` của tệp PE đó (`file_dll + *v3`). Sau đó thực hiện duyệt các tên có trong bảng `export` để xem có khớp với tên chỉ định `name` ban đầu không, nếu thấy sẽ trả về địa chỉ tương ứng của hàm đó, nếu không thấy sẽ trả về `NULL`. Với những hàm như **LoadLibraryA**, **VirtualAlloc**,... thì `file_dll` là `kernel32.dll`, còn những hàm như **CryptImportKey**, **CryptAcquireContextA** thì `file_dll` sẽ là `advapi32.dll`.
+
 
 
 - Chú ý: Khi chương trình thực hiện một lời gọi hàm, vì chương trình sẽ thực hiện đẩy địa chỉ tiếp theo sau câu lệnh call (hay nó còn được gọi là return address).
@@ -264,7 +295,7 @@ b# FLAG_CHECKER
 
     ![alt text](IMG/image-8.png)
 
-    Trong đó hàm `find_address_WinAPI` như sau:
+    <!-- Trong đó hàm `find_address_WinAPI` như sau:
 
     ```C
     int __cdecl sub_4B43931(int file_dll, _BYTE *name)
@@ -293,7 +324,7 @@ b# FLAG_CHECKER
     }
     ```
 
-    Hàm này có chức năng tìm địa chỉ của hàm trong `file_dll` mà không cần đến sử dụng `GetProcAddress`. Ban đầu chương trình sẽ kiểm tra xem có đúng là tệp hợp lệ không (`*(_WORD *)file_dll != 'ZM'` vì tệp PE bắt đầu bằng chữ kí `MZ`), sau đó sẽ truy cập vào bảng `export` của tệp PE đó (`file_dll + *v3`). Sau đó thực hiện duyệt các tên có trong bảng `export` để xem có khớp với tên chỉ định `name` ban đầu không, nếu thấy sẽ trả về địa chỉ tương ứng của hàm đó, nếu không thấy sẽ trả về `NULL`. Với những hàm như **LoadLibraryA**, **VirtualAlloc**,... thì `file_dll` là `kernel32.dll`, còn những hàm như **CryptImportKey**, **CryptAcquireContextA** thì `file_dll` sẽ là `advapi32.dll`.
+    Hàm này có chức năng tìm địa chỉ của hàm trong `file_dll` mà không cần đến sử dụng `GetProcAddress`. Ban đầu chương trình sẽ kiểm tra xem có đúng là tệp hợp lệ không (`*(_WORD *)file_dll != 'ZM'` vì tệp PE bắt đầu bằng chữ kí `MZ`), sau đó sẽ truy cập vào bảng `export` của tệp PE đó (`file_dll + *v3`). Sau đó thực hiện duyệt các tên có trong bảng `export` để xem có khớp với tên chỉ định `name` ban đầu không, nếu thấy sẽ trả về địa chỉ tương ứng của hàm đó, nếu không thấy sẽ trả về `NULL`. Với những hàm như **LoadLibraryA**, **VirtualAlloc**,... thì `file_dll` là `kernel32.dll`, còn những hàm như **CryptImportKey**, **CryptAcquireContextA** thì `file_dll` sẽ là `advapi32.dll`. -->
 
 - Sau khi ngồi đọc chay đoạn mã máy ở trên thì ta thực hiện viết sc để tìm flag:
 
