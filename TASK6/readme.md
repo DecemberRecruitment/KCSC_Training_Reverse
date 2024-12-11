@@ -1,4 +1,4 @@
-# FLAG_CHECKER
+b# FLAG_CHECKER
 
 - Chall: [FILE](CHALL/FlagChecker.zip).
 
@@ -124,7 +124,68 @@
 
 ## Phân tích Shellcode
 
-- Khi chương trình thực hiện một lời gọi hàm, vì chương trình sẽ thực hiện đẩy địa chỉ tiếp theo sau câu lệnh call (hay nó còn được gọi là return address).
+> Shellcode là một đoạn mã máy (machine code) nhỏ được thiết kế để thực thi một nhiệm vụ cụ thể, thường được sử dụng trong các cuộc tấn công bảo mật như khai thác lỗ hổng phần mềm.
+
+> Đặc điểm nổi bật của Shellcode chính là `Tự hoặt động một cách độc lập`: Shellcode không phụ thuộc vào các thành phần khác ngoài chính nó, cho phép nó chạy được lập trong trường hợp nó nhúng vào bất kì bộ nhớ của chương trình nào. 
+
+> Shellcode thường sử dụng các API của hệ điều hành như `LoadLibrary` và `GetProcAddress`, vì tính linh hoạt của 2 hàm này cho phép Shellcode có thể hoạt động độc lập và chạy mọi thứ mà đoạn shell muốn. Vì hàm `LoadLibrary` cho phép shellcode tải một thư viện vào không gian địa chỉ của quy trình hiện tại và hàm `GetProcAddress` cho phép truy xuất địa chỉ của một hàm cụ thể trong DLL đã nạp (Điều này cho phép shellcode truy cập các hàm mà không được nạp sẵn).
+
+- Chính vì sự quan trọng của 2 hàm `LoadLibrary` và `GetProcAddress` nên điều đầu tiên trong đoạn shellcode trên là ta thấy đoạn shell đang cố tìm thư viện `kernel32.dll` thông qua cấu trúc PEB vì 2 hàm trên ở trong thư viện `kernel32.dll`:
+
+    ```C
+    struct _LIST_ENTRY *__cdecl sub_49D339B(int kernel32)
+    {
+    __int16 v1; // ax
+    __int16 v2; // dx
+    struct _LIST_ENTRY *Flink; // [esp+1Ch] [ebp-18h]
+    struct _LIST_ENTRY *v5; // [esp+20h] [ebp-14h]
+    int i; // [esp+24h] [ebp-10h]
+    __int16 v7; // [esp+30h] [ebp-4h]
+    __int16 v8; // [esp+32h] [ebp-2h]
+
+    Flink = NtCurrentPeb()->Ldr->InLoadOrderModuleList.Flink;
+    while ( Flink && Flink[3].Flink )
+    {
+        if ( Flink[6].Flink )
+        {
+        v5 = Flink[6].Flink;
+        for ( i = 0; *(_WORD *)(kernel32 + 2 * i) && *((_WORD *)&v5->Flink + i); ++i )
+        {
+            if ( *(unsigned __int16 *)(kernel32 + 2 * i) > 0x5Au || *(unsigned __int16 *)(kernel32 + 2 * i) < 0x41u )
+            {
+            v8 = *(_WORD *)(kernel32 + 2 * i);
+            }
+            else
+            {
+            v1 = *(_WORD *)(kernel32 + 2 * i);
+            *(_WORD *)(kernel32 + 2 * i) = v1 + 32;
+            v8 = v1 + 32;
+            }
+            if ( *((unsigned __int16 *)&v5->Flink + i) > 0x5Au || *((unsigned __int16 *)&v5->Flink + i) < 0x41u )
+            {
+            v7 = *((_WORD *)&v5->Flink + i);
+            }
+            else
+            {
+            v2 = *((_WORD *)&v5->Flink + i);
+            *((_WORD *)&v5->Flink + i) = v2 + 32;
+            v7 = v2 + 32;
+            }
+            if ( v8 != v7 )
+            break;
+        }
+        if ( !*(_WORD *)(kernel32 + 2 * i) && !*((_WORD *)&v5->Flink + i) )
+            return Flink[3].Flink;
+        Flink = Flink->Flink;
+        }
+    }
+    return 0;
+    }
+    ```
+
+
+
+- Chú ý: Khi chương trình thực hiện một lời gọi hàm, vì chương trình sẽ thực hiện đẩy địa chỉ tiếp theo sau câu lệnh call (hay nó còn được gọi là return address).
 
     ![alt text](IMG/image-6.png)
 
@@ -202,6 +263,37 @@
 
 
     ![alt text](IMG/image-8.png)
+
+    Trong đó hàm `find_address_WinAPI` như sau:
+
+    ```C
+    int __cdecl sub_4B43931(int file_dll, _BYTE *name)
+    {
+    _DWORD *v3; // [esp+24h] [ebp-18h]
+    _BYTE *v4; // [esp+2Ch] [ebp-10h]
+    _DWORD *v5; // [esp+30h] [ebp-Ch]
+    unsigned int i; // [esp+34h] [ebp-8h]
+    int j; // [esp+38h] [ebp-4h]
+
+    if ( *(_WORD *)file_dll != 'ZM' )
+        return 0;
+    v3 = (_DWORD *)(*(_DWORD *)(file_dll + 0x3C) + file_dll + 0x78);
+    if ( !*v3 )
+        return 0;
+    v5 = (_DWORD *)(file_dll + *v3);
+    for ( i = 0; i < v5[6]; ++i )
+    {
+        v4 = (_BYTE *)(*(_DWORD *)(v5[8] + file_dll + 4 * i) + file_dll);
+        for ( j = 0; name[j] && v4[j] && name[j] == v4[j]; ++j )
+        ;
+        if ( !name[j] && !v4[j] )
+        return *(_DWORD *)(v5[7] + file_dll + 4 * *(unsigned __int16 *)(v5[9] + file_dll + 2 * i)) + file_dll;
+    }
+    return 0;
+    }
+    ```
+
+    Hàm này có chức năng tìm địa chỉ của hàm trong `file_dll` mà không cần đến sử dụng `GetProcAddress`. Ban đầu chương trình sẽ kiểm tra xem có đúng là tệp hợp lệ không (`*(_WORD *)file_dll != 'ZM'` vì tệp PE bắt đầu bằng chữ kí `MZ`), sau đó sẽ truy cập vào bảng `export` của tệp PE đó (`file_dll + *v3`). Sau đó thực hiện duyệt các tên có trong bảng `export` để xem có khớp với tên chỉ định `name` ban đầu không, nếu thấy sẽ trả về địa chỉ tương ứng của hàm đó, nếu không thấy sẽ trả về `NULL`. Với những hàm như **LoadLibraryA**, **VirtualAlloc**,... thì `file_dll` là `kernel32.dll`, còn những hàm như **CryptImportKey**, **CryptAcquireContextA** thì `file_dll` sẽ là `advapi32.dll`.
 
 - Sau khi ngồi đọc chay đoạn mã máy ở trên thì ta thực hiện viết sc để tìm flag:
 
